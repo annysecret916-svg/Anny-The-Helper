@@ -41,10 +41,12 @@ app.listen(PORT, () => {
 const BOT_TOKEN = process.env.BOT_TOKEN;
 const GUILD_ID = process.env.GUILD_ID;
 
-// ข้อมูลตั้งค่าระบบ
+// ข้อมูลตั้งค่าระบบ (เพิ่มช่องเก็บลิงก์รูปภาพสำหรับ Ticket Panel และ Log)
 let configData = {
   ticketPanelChannelId: '', // ห้องที่จะให้บอทส่งปุ่มเปิด Ticket
-  ticketLogChannelId: ''    // ห้องรับแจ้งปัญหาสำหรับแอดมิน
+  ticketPanelImage: '',     // ลิงก์รูปภาพสำหรับ Ticket Panel
+  ticketLogChannelId: '',   // ห้องรับแจ้งปัญหาสำหรับแอดมิน
+  ticketLogImage: ''        // ลิงก์รูปภาพสำหรับ Log แจ้งเตือนแอดมิน
 };
 
 const activeTickets = new Map(); // เก็บข้อมูล Ticket ชั่วคราว (MessageID -> UserID)
@@ -83,39 +85,16 @@ client.once('ready', async () => {
 
   const rest = new REST({ version: '10' }).setToken(BOT_TOKEN);
 
-  
-try {
-  console.log('[Anny] เริ่มลงทะเบียนคำสั่ง');
-  console.log('[Anny] Application ID:', client.user.id);
-  console.log('[Anny] Guild ID:', GUILD_ID);
-
-  const registered = await rest.put(
-    Routes.applicationGuildCommands(
-      client.user.id,
-      GUILD_ID
-    ),
-    { body: commands }
-  );
-
-  console.log(
-    '[Anny] ลงทะเบียนสำเร็จ:',
-    registered.map(command => command.name)
-  );
-
-  const fetched = await rest.get(
-    Routes.applicationGuildCommands(
-      client.user.id,
-      GUILD_ID
-    )
-  );
-
-  console.log(
-    '[Anny] คำสั่งที่บันทึกไว้:',
-    fetched.map(command => command.name)
-  );
-} catch (error) {
-  console.error('[Anny] ลงทะเบียนไม่สำเร็จ:', error);
-}
+  try {
+    await rest.put(
+      Routes.applicationGuildCommands(client.user.id, GUILD_ID),
+      { body: commands },
+    );
+    console.log('🎉 ลงทะเบียน Slash Commands ของ Anny สำเร็จเรียบร้อย!');
+  } catch (error) {
+    console.error('❌ เกิดข้อผิดพลาดในการลงทะเบียนคำสั่ง:', error);
+  }
+});
 
 // ==========================================
 // ระบบแอดมินตอบกลับ Ticket ผ่านห้อง Log (2 ทาง)
@@ -176,6 +155,10 @@ client.on('interactionCreate', async interaction => {
       .setColor('#ff6b81')
       .setTimestamp();
 
+    if (configData.ticketPanelImage && configData.ticketPanelImage.trim() !== '') {
+      embed.setImage(configData.ticketPanelImage.trim());
+    }
+
     const row = new ActionRowBuilder().addComponents(
       new ButtonBuilder()
         .setCustomId('open_anny_ticket_form')
@@ -187,7 +170,7 @@ client.on('interactionCreate', async interaction => {
     return interaction.reply({ content: `✅ **ส่งแผงระบบ Anny the Helper ไปที่ห้อง <#${targetChannelId}> สำเร็จแล้วค่ะ!** 🌸`, ephemeral: true });
   }
 
-  // 2. คำสั่ง /config-panel สำหรับแอดมินจัดการตั้งค่าห้องต่างๆ
+  // 2. คำสั่ง /config-panel สำหรับแอดมินจัดการตั้งค่าห้องและรูปภาพ
   if (interaction.isChatInputCommand() && interaction.commandName === 'config-panel') {
     if (!interaction.member.permissions.has(PermissionFlagsBits.Administrator)) {
       return interaction.reply({ content: '❌ เฉพาะ Admin เท่านั้นที่เปิดแผงควบคุมนี้ได้ค่ะ!', ephemeral: true });
@@ -195,14 +178,16 @@ client.on('interactionCreate', async interaction => {
 
     const panelChannelStatus = configData.ticketPanelChannelId ? `<#${configData.ticketPanelChannelId}>` : '❌ ยังไม่ได้ตั้งค่า';
     const logChannelStatus = configData.ticketLogChannelId ? `<#${configData.ticketLogChannelId}>` : '❌ ยังไม่ได้ตั้งค่า';
+    const panelImgStatus = configData.ticketPanelImage ? '🖼️ ตั้งค่าแล้ว' : '❌ ไม่มีรูปภาพ';
+    const logImgStatus = configData.ticketLogImage ? '🖼️ ตั้งค่าแล้ว' : '❌ ไม่มีรูปภาพ';
 
     const panelEmbed = new EmbedBuilder()
       .setTitle('⚙️ Anny the Helper - Admin Configuration Panel')
-      .setDescription('เลือกปุ่มด้านล่างเพื่อตั้งค่าห้องสำหรับระบบ Ticket ของบอทค่ะ')
+      .setDescription('เลือกปุ่มด้านล่างเพื่อตั้งค่าห้องและรูปภาพสำหรับระบบ Ticket ของบอทค่ะ')
       .setColor('#9b59b6')
       .addFields(
-        { name: '📢 ห้องสำหรับส่งปุ่ม Ticket Panel', value: panelChannelStatus, inline: false },
-        { name: '📥 ห้องรับแจ้งปัญหาสำหรับแอดมิน (Log)', value: logChannelStatus, inline: false }
+        { name: '📢 ห้องสำหรับส่งปุ่ม Ticket Panel', value: `${panelChannelStatus} (${panelImgStatus})`, inline: false },
+        { name: '📥 ห้องรับแจ้งปัญหาสำหรับแอดมิน (Log)', value: `${logChannelStatus} (${logImgStatus})`, inline: false }
       );
 
     const row = new ActionRowBuilder().addComponents(
@@ -214,27 +199,39 @@ client.on('interactionCreate', async interaction => {
   }
 
   if (interaction.isButton() && interaction.customId === 'config_set_panel_channel') {
-    const modal = new ModalBuilder().setCustomId('modal_set_panel_channel').setTitle('📢 ตั้งค่าห้องส่งปุ่ม Ticket');
-    const input = new TextInputBuilder().setCustomId('channel_id').setLabel('Channel ID (ไอดีห้อง)').setStyle(TextInputStyle.Short).setValue(configData.ticketPanelChannelId).setRequired(true);
-    modal.addComponents(new ActionRowBuilder().addComponents(input));
+    const modal = new ModalBuilder().setCustomId('modal_set_panel_channel').setTitle('📢 ตั้งค่า Ticket Panel & รูปภาพ');
+    const channelInput = new TextInputBuilder().setCustomId('channel_id').setLabel('Channel ID (ไอดีห้อง)').setStyle(TextInputStyle.Short).setValue(configData.ticketPanelChannelId).setRequired(true);
+    const imageInput = new TextInputBuilder().setCustomId('image_url').setLabel('ลิงก์รูปภาพ Banner (ถ้ามี)').setStyle(TextInputStyle.Short).setValue(configData.ticketPanelImage).setRequired(false);
+    
+    modal.addComponents(
+      new ActionRowBuilder().addComponents(channelInput),
+      new ActionRowBuilder().addComponents(imageInput)
+    );
     return interaction.showModal(modal);
   }
 
   if (interaction.isButton() && interaction.customId === 'config_set_log_channel') {
-    const modal = new ModalBuilder().setCustomId('modal_set_log_channel').setTitle('📥 ตั้งค่าห้องรับแจ้ง Log');
-    const input = new TextInputBuilder().setCustomId('channel_id').setLabel('Channel ID (ไอดีห้องแอดมิน)').setStyle(TextInputStyle.Short).setValue(configData.ticketLogChannelId).setRequired(true);
-    modal.addComponents(new ActionRowBuilder().addComponents(input));
+    const modal = new ModalBuilder().setCustomId('modal_set_log_channel').setTitle('📥 ตั้งค่า Ticket Log & รูปภาพ');
+    const channelInput = new TextInputBuilder().setCustomId('channel_id').setLabel('Channel ID (ไอดีห้องแอดมิน)').setStyle(TextInputStyle.Short).setValue(configData.ticketLogChannelId).setRequired(true);
+    const imageInput = new TextInputBuilder().setCustomId('image_url').setLabel('ลิงก์รูปภาพ Banner (ถ้ามี)').setStyle(TextInputStyle.Short).setValue(configData.ticketLogImage).setRequired(false);
+    
+    modal.addComponents(
+      new ActionRowBuilder().addComponents(channelInput),
+      new ActionRowBuilder().addComponents(imageInput)
+    );
     return interaction.showModal(modal);
   }
 
   if (interaction.isModalSubmit() && interaction.customId === 'modal_set_panel_channel') {
     configData.ticketPanelChannelId = interaction.fields.getTextInputValue('channel_id').trim();
-    return interaction.reply({ content: `✅ **บันทึกห้องส่งปุ่ม Ticket สำเร็จ!** (<#${configData.ticketPanelChannelId}>)`, ephemeral: true });
+    configData.ticketPanelImage = interaction.fields.getTextInputValue('image_url').trim();
+    return interaction.reply({ content: `✅ **บันทึกตั้งค่าห้องและรูปภาพ Ticket Panel สำเร็จ!** (<#${configData.ticketPanelChannelId}>)`, ephemeral: true });
   }
 
   if (interaction.isModalSubmit() && interaction.customId === 'modal_set_log_channel') {
     configData.ticketLogChannelId = interaction.fields.getTextInputValue('channel_id').trim();
-    return interaction.reply({ content: `✅ **บันทึกห้องรับแจ้ง Log สำเร็จ!** (<#${configData.ticketLogChannelId}>)`, ephemeral: true });
+    configData.ticketLogImage = interaction.fields.getTextInputValue('image_url').trim();
+    return interaction.reply({ content: `✅ **บันทึกตั้งค่าห้องและรูปภาพ Ticket Log สำเร็จ!** (<#${configData.ticketLogChannelId}>)`, ephemeral: true });
   }
 
   // ==========================================
@@ -378,6 +375,10 @@ client.on('interactionCreate', async interaction => {
       .setFooter({ text: '💡 แอดมินสามารถ Reply (ตอบกลับ) ข้อความนี้เพื่อส่งคำตอบหาผู้เล่นทาง DM ได้ทันที' })
       .setTimestamp();
 
+    if (configData.ticketLogImage && configData.ticketLogImage.trim() !== '') {
+      reportEmbed.setImage(configData.ticketLogImage.trim());
+    }
+
     const logChannelId = configData.ticketLogChannelId || interaction.channelId;
     const logChannel = interaction.guild.channels.cache.get(logChannelId);
 
@@ -392,7 +393,5 @@ client.on('interactionCreate', async interaction => {
   }
 
 });
-
-}); // ปิด client.once('ready')
 
 client.login(BOT_TOKEN);
