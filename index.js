@@ -38,7 +38,7 @@ app.listen(PORT, () => {
 const BOT_TOKEN = process.env.BOT_TOKEN;
 const GUILD_ID = process.env.GUILD_ID;
 
-// ตัวแปรเก็บค่าคอนฟิก (รูปทั้ง 2 รูปจะถูกส่งแบบ setImage ด้านล่าง)
+// ตัวแปรเก็บค่าคอนฟิก (รูปภาพทั้ง 2 รูปส่งแบบ setImage ด้านล่าง)
 let configData = {
   ticketPanelChannelId: '', 
   ticketPanelImage: '',       // ลิงก์รูปภาพที่ 1 (Banner หลัก)
@@ -66,12 +66,12 @@ client.once('ready', async () => {
   const commands = [
     {
       name: 'setup-ticket',
-      description: '🛡️ ส่งแผงระบบช่วยเหลือ Anny the Helper ไปยังห้องที่ตั้งค่าไว้',
+      description: '🛡️ ส่งแผงระบบช่วยเหลือ Anny the Helper (TH/EN Support Panel)',
       default_member_permissions: PermissionFlagsBits.Administrator.toString(),
     },
     {
       name: 'config-panel',
-      description: '⚙️ เปิดแผงควบคุมตั้งค่าห้อง Ticket, Log และรูปภาพ สำหรับ Admin',
+      description: '⚙️ แผงควบคุมตั้งค่าห้องและรูปภาพ (Admin Configuration Panel)',
       default_member_permissions: PermissionFlagsBits.Administrator.toString(),
     }
   ];
@@ -111,10 +111,10 @@ client.on('messageCreate', async message => {
 
           if (targetUser) {
             const replyEmbed = new EmbedBuilder()
-              .setTitle('🛡️ [ Anny the Helper ] ข้อความตอบกลับจากทีมงาน')
+              .setTitle('🛡️ [ Anny the Helper ] ข้อความตอบกลับจากทีมงาน / Staff Response')
               .setDescription(message.content)
               .setColor('#2ecc71')
-              .setFooter({ text: `ตอบกลับโดยแอดมิน: ${message.author.tag}` })
+              .setFooter({ text: `ตอบกลับโดย / Replied by Admin: ${message.author.tag}` })
               .setTimestamp();
 
             await targetUser.send({ embeds: [replyEmbed] });
@@ -134,23 +134,23 @@ client.on('messageCreate', async message => {
 // ==========================================
 client.on('interactionCreate', async interaction => {
 
-  // 1. คำสั่ง /setup-ticket
+  // 1. คำสั่ง /setup-ticket (ส่งแผง Ticket)
   if (interaction.isChatInputCommand() && interaction.commandName === 'setup-ticket') {
     if (!interaction.member.permissions.has(PermissionFlagsBits.Administrator)) {
-      return interaction.reply({ content: '❌ เฉพาะ Admin เท่านั้นที่ใช้งานคำสั่งนี้ได้ค่ะ!', ephemeral: true });
+      return interaction.reply({ content: '❌ เฉพาะ Admin เท่านั้นที่ใช้งานคำสั่งนี้ได้ค่ะ / Admin only!', ephemeral: true });
     }
 
     const targetChannelId = configData.ticketPanelChannelId || interaction.channelId;
     const targetChannel = interaction.guild.channels.cache.get(targetChannelId);
 
     if (!targetChannel) {
-      return interaction.reply({ content: '❌ ยังไม่ได้ตั้งค่าห้องสำหรับส่งแผง Ticket กรุณาตั้งค่าผ่าน `/config-panel` ก่อนค่ะ!', ephemeral: true });
+      return interaction.reply({ content: '❌ ยังไม่ได้ตั้งค่าห้องสำหรับส่งแผง Ticket กรุณาตั้งค่าผ่าน `/config-panel` ก่อนค่ะ! / Please setup via `/config-panel` first.', ephemeral: true });
     }
 
-    // Embed ใบที่ 1: ข้อความหลัก + รูปภาพแรก (Banner 1)
+    // Embed ใบที่ 1: ภาษาไทย + ภาษาอังกฤษ
     const embed1 = new EmbedBuilder()
-      .setTitle('🛡️ ──・[ Anny the Helper : ศูนย์ช่วยเหลือผู้เล่น ]・── 🌸')
-      .setDescription('✨ สวัสดีค่ะคุณผู้เล่น! หากคุณพบปัญหา:\n\n> 🖥️ **Launcher มีปัญหา** (บัค, กดปุ่มไม่ได้, Fix system ไม่ทำงาน)\n> 🎮 **ตัวเกม Game Error** (เกมบัค, Error 0, 3, 4)\n> 🚨 **แจ้งผู้เล่นโกง** (มีคนเล่นบัค, ใช้โปรแกรมโกง)\n\n🧸 **คลิกปุ่มด้านล่างเพื่อเปิดฟอร์มแจ้งปัญหา (Ticket) ได้เลยนะคะ!**')
+      .setTitle('🛡️ ──・[ Anny the Helper : Support Center / ศูนย์ช่วยเหลือ ]・── 🌸')
+      .setDescription('✨ **สวัสดีค่ะคุณผู้เล่น! / Hello Players!**\nหากคุณพบปัญหาในการเล่นเกมหรือต้องการความช่วยเหลือ / If you encounter any issues:\n\n> 🖥️ **Launcher Issues / ปัญหา Launcher** (บัค, กดปุ่มไม่ได้, Fix system)\n> 🎮 **Game Errors / ตัวเกมมีปัญหา** (เกมบัค, Error 0, 3, 4)\n> 🚨 **Report Players / แจ้งผู้เล่นโกง** (ใช้โปรแกรมโกง, จงใจใช้บัค)\n\n🧸 **คลิกปุ่มด้านล่างเพื่อเปิดฟอร์มแจ้งปัญหาได้เลยค่ะ! / Click below to open a ticket!**')
       .setColor('#ff6b81')
       .setTimestamp();
 
@@ -160,7 +160,6 @@ client.on('interactionCreate', async interaction => {
 
     const embedsToSend = [embed1];
 
-    // Embed ใบที่ 2: รูปภาพที่ 2 แสดงผลเป็นsetImage ต่อท้ายลงมาด้านล่าง
     if (configData.ticketPanelImage2 && configData.ticketPanelImage2.trim() !== '') {
       const embed2 = new EmbedBuilder()
         .setColor('#ff6b81')
@@ -168,11 +167,10 @@ client.on('interactionCreate', async interaction => {
       embedsToSend.push(embed2);
     }
 
-    // ปุ่มกดจะแสดงใต้รูปภาพทั้งหมดเเน่นอน
     const row = new ActionRowBuilder().addComponents(
       new ButtonBuilder()
         .setCustomId('open_anny_ticket_form')
-        .setLabel('🎫 เปิดฟอร์มแจ้งปัญหา (Ticket)')
+        .setLabel('🎫 เปิดฟอร์มแจ้งปัญหา / Create Ticket')
         .setStyle(ButtonStyle.Success)
     );
 
@@ -180,22 +178,22 @@ client.on('interactionCreate', async interaction => {
     return interaction.reply({ content: `✅ **ส่งแผงระบบ Anny the Helper ไปที่ห้อง <#${targetChannelId}> สำเร็จแล้วค่ะ!** 🌸`, ephemeral: true });
   }
 
-  // 2. คำสั่ง /config-panel
+  // 2. คำสั่ง /config-panel (แผงตั้งค่าสำหรับ Admin)
   if (interaction.isChatInputCommand() && interaction.commandName === 'config-panel') {
     if (!interaction.member.permissions.has(PermissionFlagsBits.Administrator)) {
-      return interaction.reply({ content: '❌ เฉพาะ Admin เท่านั้นที่เปิดแผงควบคุมนี้ได้ค่ะ!', ephemeral: true });
+      return interaction.reply({ content: '❌ เฉพาะ Admin เท่านั้นที่เปิดแผงควบคุมนี้ได้ค่ะ! / Admin only!', ephemeral: true });
     }
 
-    const panelChannelStatus = configData.ticketPanelChannelId ? `<#${configData.ticketPanelChannelId}>` : '❌ ยังไม่ได้ตั้งค่า';
-    const logChannelStatus = configData.ticketLogChannelId ? `<#${configData.ticketLogChannelId}>` : '❌ ยังไม่ได้ตั้งค่า';
-    const panelImgStatus = configData.ticketPanelImage ? '🖼️ รูปหลัก 1: มีแล้ว' : '❌ รูปหลัก 1: ไม่มี';
-    const panelImg2Status = configData.ticketPanelImage2 ? '🖼️ รูปที่ 2: มีแล้ว' : '❌ รูปที่ 2: ไม่มี';
-    const logImgStatus = configData.ticketLogImage ? '🖼️ รูปหลัก 1: มีแล้ว' : '❌ รูปหลัก 1: ไม่มี';
-    const logImg2Status = configData.ticketLogImage2 ? '🖼️ รูปที่ 2: มีแล้ว' : '❌ รูปที่ 2: ไม่มี';
+    const panelChannelStatus = configData.ticketPanelChannelId ? `<#${configData.ticketPanelChannelId}>` : '❌ ยังไม่ได้ตั้งค่า / Not Set';
+    const logChannelStatus = configData.ticketLogChannelId ? `<#${configData.ticketLogChannelId}>` : '❌ ยังไม่ได้ตั้งค่า / Not Set';
+    const panelImgStatus = configData.ticketPanelImage ? '🖼️ Image 1: OK' : '❌ Image 1: None';
+    const panelImg2Status = configData.ticketPanelImage2 ? '🖼️ Image 2: OK' : '❌ Image 2: None';
+    const logImgStatus = configData.ticketLogImage ? '🖼️ Image 1: OK' : '❌ Image 1: None';
+    const logImg2Status = configData.ticketLogImage2 ? '🖼️ Image 2: OK' : '❌ Image 2: None';
 
     const panelEmbed = new EmbedBuilder()
       .setTitle('⚙️ Anny the Helper - Admin Configuration Panel')
-      .setDescription('เลือกปุ่มด้านล่างเพื่อตั้งค่าห้องและรูปภาพประกอบ (setImage ด้านล่างทั้งคู่) ได้เลยค่ะ')
+      .setDescription('เลือกปุ่มด้านล่างเพื่อตั้งค่าห้องและรูปภาพประกอบ (TH/EN Supported)')
       .setColor('#9b59b6')
       .addFields(
         { name: '📢 ห้องสำหรับส่งปุ่ม Ticket Panel', value: `${panelChannelStatus}\n└ ${panelImgStatus} | ${panelImg2Status}`, inline: false },
@@ -203,8 +201,8 @@ client.on('interactionCreate', async interaction => {
       );
 
     const row = new ActionRowBuilder().addComponents(
-      new ButtonBuilder().setCustomId('config_set_panel_channel').setLabel('📢 ตั้งค่าห้องส่งปุ่ม Ticket & รูปภาพ').setStyle(ButtonStyle.Primary),
-      new ButtonBuilder().setCustomId('config_set_log_channel').setLabel('📥 ตั้งค่าห้องรับแจ้ง Log & รูปภาพ').setStyle(ButtonStyle.Success)
+      new ButtonBuilder().setCustomId('config_set_panel_channel').setLabel('📢 ตั้งค่า Ticket Panel & รูปภาพ').setStyle(ButtonStyle.Primary),
+      new ButtonBuilder().setCustomId('config_set_log_channel').setLabel('📥 ตั้งค่า Ticket Log & รูปภาพ').setStyle(ButtonStyle.Success)
     );
 
     return interaction.reply({ embeds: [panelEmbed], components: [row], ephemeral: true });
@@ -212,7 +210,7 @@ client.on('interactionCreate', async interaction => {
 
   // Modal ตั้งค่า Ticket Panel
   if (interaction.isButton() && interaction.customId === 'config_set_panel_channel') {
-    const modal = new ModalBuilder().setCustomId('modal_set_panel_channel').setTitle('📢 ตั้งค่า Ticket Panel & รูปภาพ');
+    const modal = new ModalBuilder().setCustomId('modal_set_panel_channel').setTitle('📢 Setup Ticket Panel & Images');
     
     const channelInput = new TextInputBuilder()
       .setCustomId('channel_id')
@@ -223,7 +221,7 @@ client.on('interactionCreate', async interaction => {
 
     const imageInput = new TextInputBuilder()
       .setCustomId('image_url')
-      .setLabel('รูปที่ 1 Banner ด้านล่าง (URL)')
+      .setLabel('รูปที่ 1 / Banner 1 URL')
       .setStyle(TextInputStyle.Short)
       .setPlaceholder('https://cdn.discordapp.com/...')
       .setValue(configData.ticketPanelImage)
@@ -231,7 +229,7 @@ client.on('interactionCreate', async interaction => {
 
     const image2Input = new TextInputBuilder()
       .setCustomId('image_url_2')
-      .setLabel('รูปที่ 2 Banner ต่อท้ายด้านล่าง (URL)')
+      .setLabel('รูปที่ 2 / Banner 2 URL')
       .setStyle(TextInputStyle.Short)
       .setPlaceholder('https://cdn.discordapp.com/...')
       .setValue(configData.ticketPanelImage2)
@@ -247,18 +245,18 @@ client.on('interactionCreate', async interaction => {
 
   // Modal ตั้งค่า Ticket Log
   if (interaction.isButton() && interaction.customId === 'config_set_log_channel') {
-    const modal = new ModalBuilder().setCustomId('modal_set_log_channel').setTitle('📥 ตั้งค่า Ticket Log & รูปภาพ');
+    const modal = new ModalBuilder().setCustomId('modal_set_log_channel').setTitle('📥 Setup Ticket Log & Images');
     
     const channelInput = new TextInputBuilder()
       .setCustomId('channel_id')
-      .setLabel('Channel ID (ไอดีห้องแอดมิน)')
+      .setLabel('Admin Channel ID (ไอดีห้องแอดมิน)')
       .setStyle(TextInputStyle.Short)
       .setValue(configData.ticketLogChannelId)
       .setRequired(true);
 
     const imageInput = new TextInputBuilder()
       .setCustomId('image_url')
-      .setLabel('รูปที่ 1 Banner ด้านล่าง (URL)')
+      .setLabel('รูปที่ 1 / Banner 1 URL')
       .setStyle(TextInputStyle.Short)
       .setPlaceholder('https://cdn.discordapp.com/...')
       .setValue(configData.ticketLogImage)
@@ -266,7 +264,7 @@ client.on('interactionCreate', async interaction => {
 
     const image2Input = new TextInputBuilder()
       .setCustomId('image_url_2')
-      .setLabel('รูปที่ 2 Banner ต่อท้ายด้านล่าง (URL)')
+      .setLabel('รูปที่ 2 / Banner 2 URL')
       .setStyle(TextInputStyle.Short)
       .setPlaceholder('https://cdn.discordapp.com/...')
       .setValue(configData.ticketLogImage2)
@@ -285,7 +283,7 @@ client.on('interactionCreate', async interaction => {
     configData.ticketPanelChannelId = interaction.fields.getTextInputValue('channel_id').trim();
     configData.ticketPanelImage = interaction.fields.getTextInputValue('image_url').trim();
     configData.ticketPanelImage2 = interaction.fields.getTextInputValue('image_url_2').trim();
-    return interaction.reply({ content: `✅ **บันทึกการตั้งค่า Ticket Panel และรูปภาพสำเร็จแล้วค่ะ!**`, ephemeral: true });
+    return interaction.reply({ content: `✅ **บันทึกการตั้งค่า Ticket Panel สำเร็จแล้วค่ะ! / Saved successfully!**`, ephemeral: true });
   }
 
   // Submit Modal Ticket Log
@@ -293,31 +291,28 @@ client.on('interactionCreate', async interaction => {
     configData.ticketLogChannelId = interaction.fields.getTextInputValue('channel_id').trim();
     configData.ticketLogImage = interaction.fields.getTextInputValue('image_url').trim();
     configData.ticketLogImage2 = interaction.fields.getTextInputValue('image_url_2').trim();
-    return interaction.reply({ content: `✅ **บันทึกการตั้งค่า Ticket Log และรูปภาพสำเร็จแล้วค่ะ!**`, ephemeral: true });
+    return interaction.reply({ content: `✅ **บันทึกการตั้งค่า Ticket Log สำเร็จแล้วค่ะ! / Saved successfully!**`, ephemeral: true });
   }
 
   // ==========================================
-  // ระบบสร้างฟอร์ม Ticket ของผู้ใช้
+  // ระบบสร้างฟอร์ม Ticket ของผู้ใช้ (TH/EN)
   // ==========================================
   if (interaction.isButton() && interaction.customId === 'open_anny_ticket_form') {
     const mainCategorySelect = new StringSelectMenuBuilder()
       .setCustomId('anny_select_main_category')
-      .setPlaceholder('📌 กรุณาเลือกประเภทปัญหาหลักก่อน...')
+      .setPlaceholder('📌 เลือกประเภทปัญหาหลัก / Select Issue Category...')
       .addOptions([
-        { label: '🖥️ Launcher มีปัญหา', value: 'cat_launcher', description: 'ปัญหาเกี่ยวกับตัวเปิดเกม ตัวซ่อมแซมระบบ' },
-        { label: '🎮 ตัวเกม Game Error', value: 'cat_game', description: 'ปัญหาเกมบัค, หน้าจอ Error โค้ดต่างๆ' },
-        { label: '🚨 แจ้งผู้เล่นโกง (บัค/โปร)', value: 'cat_cheater', description: 'พบคนใช้โปรแกรมโกง หรือใช้บัคเอาเปรียบ' }
-        { label: '🖥️ Launcher issues (bugs, buttons not working, system fix not working) ' },
-        { label: '🎮 Game errors (game bugs, Error 0, 3, 4)' },
-        { label: '🚨 Report cheaters (people exploiting bugs, using cheat programs)' }
+        { label: '🖥️ Launcher มีปัญหา / Launcher Issues', value: 'cat_launcher', description: 'ตัวเปิดเกม, ปุ่มกดไม่ได้, Fix system' },
+        { label: '🎮 ตัวเกม Game Error / Game Bugs', value: 'cat_game', description: 'เกมบัค, ตกแมพ, Error 0, 3, 4' },
+        { label: '🚨 แจ้งผู้เล่นโกง / Report Cheater', value: 'cat_cheater', description: 'โปรแกรมโกง, ใช้บัคเอาเปรียบ (Hacks/Bugs)' }
       ]);
 
     const detailSelect = new StringSelectMenuBuilder()
       .setCustomId('anny_select_detail')
-      .setPlaceholder('🔒 กรุณาเลือกประเภทปัญหาหลักด้านบนก่อนนะคะ')
+      .setPlaceholder('🔒 กรุณาเลือกหมวดหมู่หลักด้านบนก่อนค่ะ / Select main category above first')
       .setDisabled(true)
       .addOptions([
-        { label: 'ยังไม่ได้เลือกระบุปัญหาแรก', value: 'none', description: 'กรุณาเลือกหมวดหมู่ด้านบนก่อนค่ะ' }
+        { label: 'ยังไม่ได้เลือกหมวดหมู่ / Category not selected', value: 'none', description: 'Please select main category above first' }
       ]);
 
     const row1 = new ActionRowBuilder().addComponents(mainCategorySelect);
@@ -326,7 +321,7 @@ client.on('interactionCreate', async interaction => {
     userReportCache.set(interaction.user.id, { mainCat: '', subCat: '' });
 
     return interaction.reply({
-      content: `🛠️ **Anny the Helper - ระบบแจ้งปัญหาอัจฉริยะ**\nขั้นตอนที่ 1: เลือกหมวดหมู่ปัญหาหลักด้านล่างนี้ก่อน ตัวเลือกอาการจึงจะเปิดใช้งานค่ะ 🌸`,
+      content: `🛠️ **Anny the Helper - Support System / ระบบแจ้งปัญหา**\n\n> 1️⃣ **ขั้นตอนที่ 1 / Step 1:** เลือกประเภทปัญหาหลักด้านบน / Select main category first.\n> 2️⃣ **ขั้นตอนที่ 2 / Step 2:** ตัวเลือกอาการย่อยจะเปิดให้เลือกค่ะ / Sub-options will then unlock. 🌸`,
       components: [row1, row2],
       ephemeral: true
     });
@@ -342,36 +337,38 @@ client.on('interactionCreate', async interaction => {
     let subOptions = [];
     if (selectedValue === 'cat_launcher') {
       subOptions = [
-        { label: '🚀 Launcher บัค', value: 'Launcher บัค', description: 'เปิด Launcher ไม่ขึ้น ค้าง หรือเด้ง' },
-        { label: '🔘 กดปุ่มไม่ได้', value: 'กดปุ่มไม่ได้', description: 'ปุ่ม Start หรือปุ่มตั้งค่ากดไม่ติด' },
-        { label: '🛠️ ตัว fix system ไม่ทำงาน', value: 'ตัว fix system ไม่ทำงาน', description: 'กดซ่อมไฟล์ระบบแล้วไม่เกิดผล' }
+        { label: '🚀 Launcher บัค / Launcher Bug', value: 'Launcher บัค (Launcher Bug)', description: 'เปิดไม่ขึ้น, ค้าง, หรือเด้งดับ / Crashes or won\'t open' },
+        { label: '🔘 กดปุ่มไม่ได้ / Buttons Unresponsive', value: 'กดปุ่มไม่ได้ (Buttons Not Working)', description: 'ปุ่ม Start หรือตั้งค่ากดไม่ติด / Start button not working' },
+        { label: '🛠️ Fix system ไม่ทำงาน / Fix System Error', value: 'ตัว fix system ไม่ทำงาน (Fix System Failed)', description: 'กดซ่อมแซมไฟล์แล้วเกิดข้อผิดพลาด / Repair process failed' }
       ];
     } else if (selectedValue === 'cat_game') {
       subOptions = [
-        { label: '🎮 เกมบัค', value: 'เกมบัค', description: 'ติดบัคในแมพ, ตกแมพ, ขยับไม่ได้' },
-        { label: '⚠️ Error 0', value: 'error 0', description: 'พบปัญหา Error Code 0' },
-        { label: '⚠️ Error 3', value: 'error 3', description: 'พบปัญหา Error Code 3' },
-        { label: '⚠️ Error 4', value: 'error 4', description: 'พบปัญหา Error Code 4' }
+        { label: '🎮 เกมบัค / In-Game Bug', value: 'เกมบัค (Game Bug)', description: 'ติดบัคในแมพ, ตกแมพ, ขยับไม่ได้ / Stuck in map, glitches' },
+        { label: '⚠️ Error 0', value: 'Error 0', description: 'พบปัญหา Error Code 0 / Encountered Error Code 0' },
+        { label: '⚠️ Error 3', value: 'Error 3', description: 'พบปัญหา Error Code 3 / Encountered Error Code 3' },
+        { label: '⚠️ Error 4', value: 'Error 4', description: 'พบปัญหา Error Code 4 / Encountered Error Code 4' }
       ];
     } else if (selectedValue === 'cat_cheater') {
       subOptions = [
-        { label: '🐛 มีคนเล่นบัค', value: 'มีคนเล่นบัค', description: 'ผู้เล่นอื่นจงใจใช้บัคเกมเอาเปรียบ' },
-        { label: '💻 มีคนใช้โปรแกรมโกง', value: 'มีคนใช้โปรแกรมโกง', description: 'พบผู้ใช้โปรแกรมช่วยเล่น / โปรโกง' }
+        { label: '🐛 มีคนใช้บัค / Bug Exploiting', value: 'มีคนเล่นบัค (Bug Abuser)', description: 'ผู้เล่นอื่นจงใจใช้บัคเอาเปรียบ / Abusing in-game bugs' },
+        { label: '💻 มีคนใช้โปร / Using Hacks/Cheats', value: 'มีคนใช้โปรแกรมโกง (Cheater/Hacker)', description: 'พบผู้ใช้โปรแกรมช่วยเล่น / Using third-party cheats' }
       ];
     }
 
+    let mainCatTitle = selectedValue === 'cat_launcher' ? 'Launcher' : selectedValue === 'cat_game' ? 'Game Error' : 'Cheater Report';
+
     const mainCategorySelect = new StringSelectMenuBuilder()
       .setCustomId('anny_select_main_category')
-      .setPlaceholder(`✔️ เลือกแล้ว: ${selectedValue === 'cat_launcher' ? 'Launcher' : selectedValue === 'cat_game' ? 'Game' : 'ผู้เล่นโกง'}`)
+      .setPlaceholder(`✔️ เลือกแล้ว / Selected: ${mainCatTitle}`)
       .addOptions([
-        { label: '🖥️ Launcher มีปัญหา', value: 'cat_launcher', description: 'ปัญหาเกี่ยวกับตัวเปิดเกม ตัวซ่อมแซมระบบ' },
-        { label: '🎮 ตัวเกม Game Error', value: 'cat_game', description: 'ปัญหาเกมบัค, หน้าจอ Error โค้ดต่างๆ' },
-        { label: '🚨 แจ้งผู้เล่นโกง (บัค/โปร)', value: 'cat_cheater', description: 'พบคนใช้โปรแกรมโกง หรือใช้บัคเอาเปรียบ' }
+        { label: '🖥️ Launcher มีปัญหา / Launcher Issues', value: 'cat_launcher', description: 'ตัวเปิดเกม, ปุ่มกดไม่ได้, Fix system' },
+        { label: '🎮 ตัวเกม Game Error / Game Bugs', value: 'cat_game', description: 'เกมบัค, ตกแมพ, Error 0, 3, 4' },
+        { label: '🚨 แจ้งผู้เล่นโกง / Report Cheater', value: 'cat_cheater', description: 'โปรแกรมโกง, ใช้บัคเอาเปรียบ (Hacks/Bugs)' }
       ]);
 
     const detailSelect = new StringSelectMenuBuilder()
       .setCustomId('anny_select_detail')
-      .setPlaceholder('✨ เลือกอาการหรือรายละเอียดปัญหาของคุณที่นี่...')
+      .setPlaceholder('✨ เลือกอาการหรือรายละเอียด / Select specific detail...')
       .addOptions(subOptions);
 
     const row1 = new ActionRowBuilder().addComponents(mainCategorySelect);
@@ -380,12 +377,12 @@ client.on('interactionCreate', async interaction => {
     const submitBtnRow = new ActionRowBuilder().addComponents(
       new ButtonBuilder()
         .setCustomId('anny_submit_final_report')
-        .setLabel('📤 ยืนยันการส่งแจ้งปัญหา (Submit)')
+        .setLabel('📤 ยืนยันส่งแจ้งปัญหา / Submit Ticket')
         .setStyle(ButtonStyle.Success)
     );
 
     return interaction.update({
-      content: `🛠️ **Anny the Helper - เลือกหัวข้อหลักเรียบร้อย!**\nขั้นตอนที่ 2: กรุณาเลือกอาการเฉพาะเจาะจงในช่อง "เป็นอย่างไร" ด้านล่างนี้ต่อได้เลยค่ะ 🌸`,
+      content: `🛠️ **Anny the Helper - เลือกหัวข้อหลักแล้ว! / Category Selected!**\n\n> **ขั้นตอนที่ 2 / Step 2:** กรุณาเลือกอาการเฉพาะเจาะจงในช่องที่ 2 ด้านล่างได้เลยค่ะ / Select specific issue detail below. 🌸`,
       components: [row1, row2, submitBtnRow]
     });
   }
@@ -395,24 +392,24 @@ client.on('interactionCreate', async interaction => {
     cached.subCat = interaction.values[0];
     userReportCache.set(interaction.user.id, cached);
 
-    return interaction.reply({ content: `✅ บันทึกอาการเรียบร้อย! กรุณากดปุ่ม **"📤 ยืนยันการส่งแจ้งปัญหา"** ด้านบนเพื่อส่งข้อมูลหาทีมงานได้เลยค่ะ`, ephemeral: true });
+    return interaction.reply({ content: `✅ **บันทึกอาการเรียบร้อย! / Issue saved!**\nกรุณากดปุ่ม **"📤 ยืนยันส่งแจ้งปัญหา / Submit Ticket"** ด้านบนได้เลยค่ะ`, ephemeral: true });
   }
 
   if (interaction.isButton() && interaction.customId === 'anny_submit_final_report') {
     let cached = userReportCache.get(interaction.user.id);
     if (!cached || !cached.mainCat || !cached.subCat) {
-      return interaction.reply({ content: '⚠️ กรุณาเลือกประเภทปัญหาหลักและอาการ (เป็นอย่างไร) ให้ครบถ้วนก่อนกดยืนยันค่ะ!', ephemeral: true });
+      return interaction.reply({ content: '⚠️ กรุณาเลือกประเภทปัญหาและอาการให้ครบถ้วนก่อนค่ะ! / Please select both category and issue detail first!', ephemeral: true });
     }
 
     const modal = new ModalBuilder()
       .setCustomId('anny_modal_submit_ticket')
-      .setTitle('📝 รายละเอียดเพิ่มเติม (Anny Ticket)');
+      .setTitle('📝 Details / รายละเอียดเพิ่มเติม');
 
     const descInput = new TextInputBuilder()
       .setCustomId('anny_report_description')
-      .setLabel('รายละเอียดเพิ่มเติม / ลิงก์รูปภาพหรือวิดีโอ')
+      .setLabel('รายละเอียด / Details or Image/Video Links')
       .setStyle(TextInputStyle.Paragraph)
-      .setPlaceholder('พิมพ์อธิบาย หรือวางลิงก์รูป/วิดีโอ (ถ้ามี)...')
+      .setPlaceholder('อธิบายเพิ่มเติม หรือแนบลิงก์รูป/วิดีโอ (ถ้ามี) / Describe your issue or paste links...')
       .setRequired(false);
 
     modal.addComponents(new ActionRowBuilder().addComponents(descInput));
@@ -423,19 +420,19 @@ client.on('interactionCreate', async interaction => {
     await interaction.deferReply({ ephemeral: true });
 
     const description = interaction.fields.getTextInputValue('anny_report_description');
-    let cached = userReportCache.get(interaction.user.id) || { mainCat: 'ไม่ระบุ', subCat: 'ไม่ระบุ' };
+    let cached = userReportCache.get(interaction.user.id) || { mainCat: 'ไม่ระบุ / Unspecified', subCat: 'ไม่ระบุ / Unspecified' };
 
-    let mainText = cached.mainCat === 'cat_launcher' ? '🖥️ Launcher มีปัญหา' : cached.mainCat === 'cat_game' ? '🎮 ตัวเกม Game Error' : '🚨 แจ้งผู้เล่นโกง';
+    let mainText = cached.mainCat === 'cat_launcher' ? '🖥️ Launcher มีปัญหา / Launcher Issue' : cached.mainCat === 'cat_game' ? '🎮 ตัวเกม Game Error / Game Bug' : '🚨 แจ้งผู้เล่นโกง / Cheater Report';
     let subText = cached.subCat;
 
     const reportEmbed = new EmbedBuilder()
-      .setTitle('🎫 [ Anny the Helper ] มีรายงานปัญหา Ticket ใหม่!')
+      .setTitle('🎫 [ Anny the Helper ] มีรายงานปัญหา Ticket ใหม่! / New Ticket Received!')
       .setColor('#e74c3c')
       .addFields(
-        { name: '👤 ผู้แจ้งปัญหา', value: `<@${interaction.user.id}> (${interaction.user.tag})`, inline: false },
-        { name: '📂 หมวดหมู่หลัก', value: mainText, inline: true },
-        { name: '🔍 อาการ (เป็นอย่างไร)', value: subText, inline: true },
-        { name: '📝 รายละเอียด / ลิงก์รูปหรือวิดีโอ', value: description || 'ไม่มีรายละเอียดเพิ่มเติม', inline: false }
+        { name: '👤 ผู้แจ้งปัญหา / Reporter', value: `<@${interaction.user.id}> (${interaction.user.tag})`, inline: false },
+        { name: '📂 หมวดหมู่หลัก / Main Category', value: mainText, inline: true },
+        { name: '🔍 อาการ / Issue Detail', value: subText, inline: true },
+        { name: '📝 รายละเอียดเพิ่มเติม / Details & Media', value: description || 'ไม่มีรายละเอียดเพิ่มเติม / No details provided', inline: false }
       )
       .setFooter({ text: '💡 แอดมินสามารถ Reply (ตอบกลับ) ข้อความนี้เพื่อส่งคำตอบหาผู้เล่นทาง DM ได้ทันที' })
       .setTimestamp();
@@ -463,7 +460,7 @@ client.on('interactionCreate', async interaction => {
 
     userReportCache.delete(interaction.user.id);
 
-    return interaction.editReply({ content: '🎉 **ส่งรายงานปัญหา (Ticket) ไปยังทีมงานเรียบร้อยแล้วค่ะ!** Anny และทีมงานจะรีบตรวจสอบและติดต่อกลับทาง DM นะคะ 🌸' });
+    return interaction.editReply({ content: '🎉 **ส่งรายงานปัญหา (Ticket) เรียบร้อยแล้วค่ะ! / Your ticket has been submitted!**\nAnny และทีมงานจะรีบตรวจสอบและติดต่อกลับทาง DM นะคะ 🌸' });
   }
 
 });
