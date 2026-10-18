@@ -20,7 +20,9 @@ const PORT = process.env.PORT || 3000;
 
 app.use(express.json());
 
-// Express Server สำหรับ UptimeRobot 24/7
+// ==========================================
+// Express Server สำหรับ UptimeRobot / Render 24/7
+// ==========================================
 app.get('/', (req, res) => {
   res.status(200).send('🤖 Anny the Helper is running and alive 24/7!');
 });
@@ -36,18 +38,18 @@ app.listen(PORT, () => {
 const BOT_TOKEN = process.env.BOT_TOKEN;
 const GUILD_ID = process.env.GUILD_ID;
 
-// ตัวแปรเก็บค่าคอนฟิก (เพิ่มช่องเก็บรูป 2 รูปต่อส่วน: Banner & Thumbnail)
+// ตัวแปรเก็บค่าคอนฟิก (รูปทั้ง 2 รูปจะถูกส่งแบบ setImage ด้านล่าง)
 let configData = {
   ticketPanelChannelId: '', 
-  ticketPanelImage: '',       // ลิงก์รูปภาพที่ 1 (Banner)
-  ticketPanelThumbnail: '',   // ลิงก์รูปภาพที่ 2 (Thumbnail/รูปเล็กลูกเล่น)
+  ticketPanelImage: '',       // ลิงก์รูปภาพที่ 1 (Banner หลัก)
+  ticketPanelImage2: '',      // ลิงก์รูปภาพที่ 2 (Banner ต่อท้าย)
   ticketLogChannelId: '',   
-  ticketLogImage: '',         // ลิงก์รูปภาพที่ 1 (Banner)
-  ticketLogThumbnail: ''      // ลิงก์รูปภาพที่ 2 (Thumbnail/รูปเล็กลูกเล่น)
+  ticketLogImage: '',         // ลิงก์รูปภาพที่ 1 (Banner หลัก Log)
+  ticketLogImage2: ''         // ลิงก์รูปภาพที่ 2 (Banner ต่อท้าย Log)
 };
 
-const activeTickets = new Map(); // เก็บแมปปิ้ง MessageID -> UserID สำหรับการ Reply ของแอดมิน
-const userReportCache = new Map(); // เก็บสถานะตัวเลือกฟอร์ม Ticket
+const activeTickets = new Map();
+const userReportCache = new Map();
 
 const client = new Client({ 
   intents: [
@@ -145,22 +147,28 @@ client.on('interactionCreate', async interaction => {
       return interaction.reply({ content: '❌ ยังไม่ได้ตั้งค่าห้องสำหรับส่งแผง Ticket กรุณาตั้งค่าผ่าน `/config-panel` ก่อนค่ะ!', ephemeral: true });
     }
 
-    const embed = new EmbedBuilder()
+    // Embed ใบที่ 1: ข้อความหลัก + รูปภาพแรก (Banner 1)
+    const embed1 = new EmbedBuilder()
       .setTitle('🛡️ ──・[ Anny the Helper : ศูนย์ช่วยเหลือผู้เล่น ]・── 🌸')
       .setDescription('✨ สวัสดีค่ะคุณผู้เล่น! หากคุณพบปัญหา:\n\n> 🖥️ **Launcher มีปัญหา** (บัค, กดปุ่มไม่ได้, Fix system ไม่ทำงาน)\n> 🎮 **ตัวเกม Game Error** (เกมบัค, Error 0, 3, 4)\n> 🚨 **แจ้งผู้เล่นโกง** (มีคนเล่นบัค, ใช้โปรแกรมโกง)\n\n🧸 **คลิกปุ่มด้านล่างเพื่อเปิดฟอร์มแจ้งปัญหา (Ticket) ได้เลยนะคะ!**')
       .setColor('#ff6b81')
       .setTimestamp();
 
-    // ใส่อิมเมจ Banner
     if (configData.ticketPanelImage && configData.ticketPanelImage.trim() !== '') {
-      embed.setImage(configData.ticketPanelImage.trim());
+      embed1.setImage(configData.ticketPanelImage.trim());
     }
 
-    // ใส่รูป Thumbnail เพิ่มเติม
-    if (configData.ticketPanelThumbnail && configData.ticketPanelThumbnail.trim() !== '') {
-      embed.setThumbnail(configData.ticketPanelThumbnail.trim());
+    const embedsToSend = [embed1];
+
+    // Embed ใบที่ 2: รูปภาพที่ 2 แสดงผลเป็นsetImage ต่อท้ายลงมาด้านล่าง
+    if (configData.ticketPanelImage2 && configData.ticketPanelImage2.trim() !== '') {
+      const embed2 = new EmbedBuilder()
+        .setColor('#ff6b81')
+        .setImage(configData.ticketPanelImage2.trim());
+      embedsToSend.push(embed2);
     }
 
+    // ปุ่มกดจะแสดงใต้รูปภาพทั้งหมดเเน่นอน
     const row = new ActionRowBuilder().addComponents(
       new ButtonBuilder()
         .setCustomId('open_anny_ticket_form')
@@ -168,11 +176,11 @@ client.on('interactionCreate', async interaction => {
         .setStyle(ButtonStyle.Success)
     );
 
-    await targetChannel.send({ embeds: [embed], components: [row] });
+    await targetChannel.send({ embeds: embedsToSend, components: [row] });
     return interaction.reply({ content: `✅ **ส่งแผงระบบ Anny the Helper ไปที่ห้อง <#${targetChannelId}> สำเร็จแล้วค่ะ!** 🌸`, ephemeral: true });
   }
 
-  // 2. คำสั่ง /config-panel แผงควบคุมของ Admin
+  // 2. คำสั่ง /config-panel
   if (interaction.isChatInputCommand() && interaction.commandName === 'config-panel') {
     if (!interaction.member.permissions.has(PermissionFlagsBits.Administrator)) {
       return interaction.reply({ content: '❌ เฉพาะ Admin เท่านั้นที่เปิดแผงควบคุมนี้ได้ค่ะ!', ephemeral: true });
@@ -180,18 +188,18 @@ client.on('interactionCreate', async interaction => {
 
     const panelChannelStatus = configData.ticketPanelChannelId ? `<#${configData.ticketPanelChannelId}>` : '❌ ยังไม่ได้ตั้งค่า';
     const logChannelStatus = configData.ticketLogChannelId ? `<#${configData.ticketLogChannelId}>` : '❌ ยังไม่ได้ตั้งค่า';
-    const panelImgStatus = configData.ticketPanelImage ? '🖼️ รูปหลัก: ตั้งค่าแล้ว' : '❌ รูปหลัก: ไม่มี';
-    const panelThumbStatus = configData.ticketPanelThumbnail ? '🖼️ รูปที่ 2: ตั้งค่าแล้ว' : '❌ รูปที่ 2: ไม่มี';
-    const logImgStatus = configData.ticketLogImage ? '🖼️ รูปหลัก: ตั้งค่าแล้ว' : '❌ รูปหลัก: ไม่มี';
-    const logThumbStatus = configData.ticketLogThumbnail ? '🖼️ รูปที่ 2: ตั้งค่าแล้ว' : '❌ รูปที่ 2: ไม่มี';
+    const panelImgStatus = configData.ticketPanelImage ? '🖼️ รูปหลัก 1: มีแล้ว' : '❌ รูปหลัก 1: ไม่มี';
+    const panelImg2Status = configData.ticketPanelImage2 ? '🖼️ รูปที่ 2: มีแล้ว' : '❌ รูปที่ 2: ไม่มี';
+    const logImgStatus = configData.ticketLogImage ? '🖼️ รูปหลัก 1: มีแล้ว' : '❌ รูปหลัก 1: ไม่มี';
+    const logImg2Status = configData.ticketLogImage2 ? '🖼️ รูปที่ 2: มีแล้ว' : '❌ รูปที่ 2: ไม่มี';
 
     const panelEmbed = new EmbedBuilder()
       .setTitle('⚙️ Anny the Helper - Admin Configuration Panel')
-      .setDescription('เลือกปุ่มด้านล่างเพื่อตั้งค่าห้องและใส่รูปภาพประกอบ (2 รูป) ของแต่ละส่วนได้เลยค่ะ')
+      .setDescription('เลือกปุ่มด้านล่างเพื่อตั้งค่าห้องและรูปภาพประกอบ (setImage ด้านล่างทั้งคู่) ได้เลยค่ะ')
       .setColor('#9b59b6')
       .addFields(
-        { name: '📢 ห้องสำหรับส่งปุ่ม Ticket Panel', value: `${panelChannelStatus}\n└ ${panelImgStatus} | ${panelThumbStatus}`, inline: false },
-        { name: '📥 ห้องรับแจ้งปัญหาสำหรับแอดมิน (Log)', value: `${logChannelStatus}\n└ ${logImgStatus} | ${logThumbStatus}`, inline: false }
+        { name: '📢 ห้องสำหรับส่งปุ่ม Ticket Panel', value: `${panelChannelStatus}\n└ ${panelImgStatus} | ${panelImg2Status}`, inline: false },
+        { name: '📥 ห้องรับแจ้งปัญหาสำหรับแอดมิน (Log)', value: `${logChannelStatus}\n└ ${logImgStatus} | ${logImg2Status}`, inline: false }
       );
 
     const row = new ActionRowBuilder().addComponents(
@@ -202,7 +210,7 @@ client.on('interactionCreate', async interaction => {
     return interaction.reply({ embeds: [panelEmbed], components: [row], ephemeral: true });
   }
 
-  // ปุ่มกดเพื่อเปิด Modal ตั้งค่า Ticket Panel (มี 3 ช่อง: ไอดีห้อง + รูปภาพ Banner + รูปภาพที่ 2)
+  // Modal ตั้งค่า Ticket Panel
   if (interaction.isButton() && interaction.customId === 'config_set_panel_channel') {
     const modal = new ModalBuilder().setCustomId('modal_set_panel_channel').setTitle('📢 ตั้งค่า Ticket Panel & รูปภาพ');
     
@@ -215,7 +223,7 @@ client.on('interactionCreate', async interaction => {
 
     const imageInput = new TextInputBuilder()
       .setCustomId('image_url')
-      .setLabel('ลิงก์รูปภาพที่ 1 Banner (รูปภาพใหญ่)')
+      .setLabel('รูปที่ 1 Banner ด้านล่าง (URL)')
       .setStyle(TextInputStyle.Short)
       .setPlaceholder('https://cdn.discordapp.com/...')
       .setValue(configData.ticketPanelImage)
@@ -223,10 +231,10 @@ client.on('interactionCreate', async interaction => {
 
     const image2Input = new TextInputBuilder()
       .setCustomId('image_url_2')
-      .setLabel('ลิงก์รูปภาพที่ 2 Thumbnail (รูปภาพขวาบน)')
+      .setLabel('รูปที่ 2 Banner ต่อท้ายด้านล่าง (URL)')
       .setStyle(TextInputStyle.Short)
       .setPlaceholder('https://cdn.discordapp.com/...')
-      .setValue(configData.ticketPanelThumbnail)
+      .setValue(configData.ticketPanelImage2)
       .setRequired(false);
 
     modal.addComponents(
@@ -237,7 +245,7 @@ client.on('interactionCreate', async interaction => {
     return interaction.showModal(modal);
   }
 
-  // ปุ่มกดเพื่อเปิด Modal ตั้งค่า Ticket Log (มี 3 ช่อง: ไอดีห้อง + รูปภาพ Banner + รูปภาพที่ 2)
+  // Modal ตั้งค่า Ticket Log
   if (interaction.isButton() && interaction.customId === 'config_set_log_channel') {
     const modal = new ModalBuilder().setCustomId('modal_set_log_channel').setTitle('📥 ตั้งค่า Ticket Log & รูปภาพ');
     
@@ -250,7 +258,7 @@ client.on('interactionCreate', async interaction => {
 
     const imageInput = new TextInputBuilder()
       .setCustomId('image_url')
-      .setLabel('ลิงก์รูปภาพที่ 1 Banner (รูปภาพใหญ่)')
+      .setLabel('รูปที่ 1 Banner ด้านล่าง (URL)')
       .setStyle(TextInputStyle.Short)
       .setPlaceholder('https://cdn.discordapp.com/...')
       .setValue(configData.ticketLogImage)
@@ -258,10 +266,10 @@ client.on('interactionCreate', async interaction => {
 
     const image2Input = new TextInputBuilder()
       .setCustomId('image_url_2')
-      .setLabel('ลิงก์รูปภาพที่ 2 Thumbnail (รูปภาพขวาบน)')
+      .setLabel('รูปที่ 2 Banner ต่อท้ายด้านล่าง (URL)')
       .setStyle(TextInputStyle.Short)
       .setPlaceholder('https://cdn.discordapp.com/...')
-      .setValue(configData.ticketLogThumbnail)
+      .setValue(configData.ticketLogImage2)
       .setRequired(false);
 
     modal.addComponents(
@@ -272,20 +280,20 @@ client.on('interactionCreate', async interaction => {
     return interaction.showModal(modal);
   }
 
-  // บันทึกข้อมูล Modal ตั้งค่า Ticket Panel
+  // Submit Modal Ticket Panel
   if (interaction.isModalSubmit() && interaction.customId === 'modal_set_panel_channel') {
     configData.ticketPanelChannelId = interaction.fields.getTextInputValue('channel_id').trim();
     configData.ticketPanelImage = interaction.fields.getTextInputValue('image_url').trim();
-    configData.ticketPanelThumbnail = interaction.fields.getTextInputValue('image_url_2').trim();
-    return interaction.reply({ content: `✅ **บันทึกการตั้งค่า Ticket Panel และรูปภาพทั้ง 2 รูปสำเร็จแล้วค่ะ!**`, ephemeral: true });
+    configData.ticketPanelImage2 = interaction.fields.getTextInputValue('image_url_2').trim();
+    return interaction.reply({ content: `✅ **บันทึกการตั้งค่า Ticket Panel และรูปภาพสำเร็จแล้วค่ะ!**`, ephemeral: true });
   }
 
-  // บันทึกข้อมูล Modal ตั้งค่า Ticket Log
+  // Submit Modal Ticket Log
   if (interaction.isModalSubmit() && interaction.customId === 'modal_set_log_channel') {
     configData.ticketLogChannelId = interaction.fields.getTextInputValue('channel_id').trim();
     configData.ticketLogImage = interaction.fields.getTextInputValue('image_url').trim();
-    configData.ticketLogThumbnail = interaction.fields.getTextInputValue('image_url_2').trim();
-    return interaction.reply({ content: `✅ **บันทึกการตั้งค่า Ticket Log และรูปภาพทั้ง 2 รูปสำเร็จแล้วค่ะ!**`, ephemeral: true });
+    configData.ticketLogImage2 = interaction.fields.getTextInputValue('image_url_2').trim();
+    return interaction.reply({ content: `✅ **บันทึกการตั้งค่า Ticket Log และรูปภาพสำเร็จแล้วค่ะ!**`, ephemeral: true });
   }
 
   // ==========================================
@@ -433,15 +441,20 @@ client.on('interactionCreate', async interaction => {
       reportEmbed.setImage(configData.ticketLogImage.trim());
     }
 
-    if (configData.ticketLogThumbnail && configData.ticketLogThumbnail.trim() !== '') {
-      reportEmbed.setThumbnail(configData.ticketLogThumbnail.trim());
+    const logEmbedsToSend = [reportEmbed];
+
+    if (configData.ticketLogImage2 && configData.ticketLogImage2.trim() !== '') {
+      const logEmbed2 = new EmbedBuilder()
+        .setColor('#e74c3c')
+        .setImage(configData.ticketLogImage2.trim());
+      logEmbedsToSend.push(logEmbed2);
     }
 
     const logChannelId = configData.ticketLogChannelId || interaction.channelId;
     const logChannel = interaction.guild.channels.cache.get(logChannelId);
 
     if (logChannel) {
-      const sentLogMsg = await logChannel.send({ embeds: [reportEmbed] });
+      const sentLogMsg = await logChannel.send({ embeds: logEmbedsToSend });
       activeTickets.set(sentLogMsg.id, interaction.user.id);
     }
 
