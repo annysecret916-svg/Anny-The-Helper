@@ -83,16 +83,39 @@ client.once('ready', async () => {
 
   const rest = new REST({ version: '10' }).setToken(BOT_TOKEN);
 
-  try {
-    await rest.put(
-      Routes.applicationGuildCommands(client.user.id, GUILD_ID),
-      { body: commands },
-    );
-    console.log('🎉 ลงทะเบียน Slash Commands ของ Anny สำเร็จเรียบร้อย!');
-  } catch (error) {
-    console.error('❌ เกิดข้อผิดพลาดในการลงทะเบียนคำสั่ง:', error);
-  }
-});
+  
+try {
+  console.log('[Anny] เริ่มลงทะเบียนคำสั่ง');
+  console.log('[Anny] Application ID:', client.user.id);
+  console.log('[Anny] Guild ID:', GUILD_ID);
+
+  const registered = await rest.put(
+    Routes.applicationGuildCommands(
+      client.user.id,
+      GUILD_ID
+    ),
+    { body: commands }
+  );
+
+  console.log(
+    '[Anny] ลงทะเบียนสำเร็จ:',
+    registered.map(command => command.name)
+  );
+
+  const fetched = await rest.get(
+    Routes.applicationGuildCommands(
+      client.user.id,
+      GUILD_ID
+    )
+  );
+
+  console.log(
+    '[Anny] คำสั่งที่บันทึกไว้:',
+    fetched.map(command => command.name)
+  );
+} catch (error) {
+  console.error('[Anny] ลงทะเบียนไม่สำเร็จ:', error);
+}
 
 // ==========================================
 // ระบบแอดมินตอบกลับ Ticket ผ่านห้อง Log (2 ทาง)
@@ -369,5 +392,7 @@ client.on('interactionCreate', async interaction => {
   }
 
 });
+
+}); // ปิด client.once('ready')
 
 client.login(BOT_TOKEN);
