@@ -307,6 +307,9 @@ client.on('interactionCreate', async interaction => {
         { label: '🖥️ Launcher มีปัญหา', value: 'cat_launcher', description: 'ปัญหาเกี่ยวกับตัวเปิดเกม ตัวซ่อมแซมระบบ' },
         { label: '🎮 ตัวเกม Game Error', value: 'cat_game', description: 'ปัญหาเกมบัค, หน้าจอ Error โค้ดต่างๆ' },
         { label: '🚨 แจ้งผู้เล่นโกง (บัค/โปร)', value: 'cat_cheater', description: 'พบคนใช้โปรแกรมโกง หรือใช้บัคเอาเปรียบ' }
+        { label: '🖥️ Launcher issues (bugs, buttons not working, system fix not working) ' },
+        { label: '🎮 Game errors (game bugs, Error 0, 3, 4)' },
+        { label: '🚨 Report cheaters (people exploiting bugs, using cheat programs)' }
       ]);
 
     const detailSelect = new StringSelectMenuBuilder()
